@@ -1,28 +1,7 @@
 # These resources are needed to setup the test env
 source 'http://rubygems.org'
 
-# Set the RAILS env variable to test against diffirent versions of rails
-case ENV["RAILS"]
-when "3.0.0"
-  gem 'rails',          '= 3.0.0'
-when "3.0.1"
-  gem 'rails',          '= 3.0.1'
-when "3.0.2"
-  gem 'rails',          '= 3.0.2'
-when "3.0.3"
-  gem 'rails',          '= 3.0.3'
-when "3.0.4"
-  gem 'rails',          '= 3.0.4'
-when "3.0.5"
-  gem 'rails',          '= 3.0.5'
-when "3.0.6"
-  gem 'rails',          '= 3.0.6'
-when "3.1.0.beta1"
-  gem 'rails',          '= 3.1.0.beta1'
-else
-  # Default gems for in the gemspec
-  gem 'rails',          '>= 3.0.0'
-end
+gem 'rails', '3.1.0.beta1'
 
 gem "meta_search",    '>= 0.9.2'
 gem 'devise',         '>= 1.1.2'
