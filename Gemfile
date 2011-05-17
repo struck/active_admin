@@ -17,6 +17,8 @@ when "3.0.5"
   gem 'rails',          '= 3.0.5'
 when "3.0.6"
   gem 'rails',          '= 3.0.6'
+when "3.1.0.beta1"
+  gem 'rails',          '= 3.1.0.beta1'
 else
   # Default gems for in the gemspec
   gem 'rails',          '>= 3.0.0'
