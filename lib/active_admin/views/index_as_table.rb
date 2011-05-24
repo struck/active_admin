@@ -32,7 +32,7 @@ module ActiveAdmin
         # Adds links to View, Edit and Delete
         def default_actions(options = {})
           options = {
-            :name => ""
+            :name => "",
             :except => []
           }.merge(options)
           column options[:name] do |resource|
