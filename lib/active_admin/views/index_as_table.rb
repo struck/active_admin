@@ -36,7 +36,7 @@ module ActiveAdmin
             :except => []
           }.merge(options)
           column options[:name] do |resource|
-            links = ''
+            links = ''.html_safe
             links += link_to "View", resource_path(resource), :class => "view_link" unless options[:except].include?(:view)
             links += link_to "Edit", edit_resource_path(resource), :class => "edit_link" unless options[:except].include?(:edit)
             links += link_to "Delete", resource_path(resource), :method => :delete, :confirm => "Are you sure you want to delete this?", :class => "delete_link" unless options[:except].include?(:delete)
