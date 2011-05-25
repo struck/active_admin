@@ -131,6 +131,12 @@ module ActiveAdmin
           end
         end
 
+
+        def empty_value
+          span "Empty", :class => "empty"
+        end
+        
+
       end
     end
   end
