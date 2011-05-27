@@ -74,12 +74,14 @@ module ActiveAdmin
           display = options[:only] || [:view, :edit, :delete]
           display.delete_if do |item| options[:except].include?(item) end
           
+          puts controller.action_methods
+          
           column options[:name] do |resource|
             links = ''.html_safe
             links += options[:before]
             links += link_to "View", resource_path(resource), :class => "view_link" if display.include?(:view)
-            links += link_to "Edit", edit_resource_path(resource), :class => "edit_link" if display.include?(:edit)
-            links += link_to "Delete", resource_path(resource), :method => :delete, :confirm => "Are you sure you want to delete this?", :class => "delete_link" if display.include?(:delete)
+            links += link_to "Edit", edit_resource_path(resource), :class => "edit_link" if display.include?(:edit) && controller.action_methods.include?("edit")
+            links += link_to "Delete", resource_path(resource), :method => :delete, :confirm => "Are you sure you want to delete this?", :class => "delete_link" if display.include?(:delete) && controller.action_methods.include?("destroy")
             links += options[:after]
             links
           end
