@@ -30,3 +30,5 @@ capybara*
 viewcumber
 test-rails-app
 public
+
+.rvmrc
