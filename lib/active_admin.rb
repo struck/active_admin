@@ -55,13 +55,13 @@ module ActiveAdmin
     @@namespaces = {}
     mattr_accessor :namespaces
 
-    # The title which get's displayed in the main layout
+    # The title which gets displayed in the main layout
     @@site_title = ""
     mattr_accessor :site_title
 
     # Load paths for admin configurations. Add folders to this load path
     # to load up other resources for administration. External gems can
-    # include thier paths in this load path to provide active_admin UIs
+    # include their paths in this load path to provide active_admin UIs
     @@load_paths = [File.expand_path('app/admin', Rails.root)]
     mattr_accessor :load_paths
 
@@ -70,10 +70,10 @@ module ActiveAdmin
     @@view_factory = ActiveAdmin::ViewFactory.new
     mattr_accessor :view_factory
 
-    # Whether or not to use admin comments
-    @@admin_notes = true
+    # DEPRECATED: This option is deprecated and will be removed. Use
+    # the #allow_comments_in option instead
     mattr_accessor :admin_notes
-    
+
     # The method to call in controllers to get the current user
     @@current_user_method = :current_admin_user
     mattr_accessor :current_user_method
@@ -84,9 +84,12 @@ module ActiveAdmin
     mattr_accessor :authentication_method
 
     # Active Admin makes educated guesses when displaying objects, this is
-    # the list of methods its tries calling in order
+    # the list of methods it tries calling in order
     @@display_name_methods = [:display_name, :full_name, :name, :username, :login, :title, :email, :to_s]
     mattr_accessor :display_name_methods
+
+    @@views_path = File.expand_path('../active_admin/views/templates', __FILE__)
+    mattr_reader :views_path
 
   end
 
@@ -96,7 +99,7 @@ module ActiveAdmin
   class << self
 
 
-    # Get's called within the initializer
+    # Gets called within the initializer
     def setup
       # Register the default assets
       register_stylesheet 'admin/active_admin.css'
@@ -105,11 +108,11 @@ module ActiveAdmin
 
       # Since we're dealing with all our own file loading, we need
       # to remove our paths from the ActiveSupport autoload paths.
-      # If not, file nameing becomes very important and can cause clashes.
+      # If not, file naming becomes very important and can cause clashes.
       ActiveSupport::Dependencies.autoload_paths.reject!{|path| load_paths.include?(path) }
 
       # Add the Active Admin view path to the rails view path
-      ActionController::Base.append_view_path File.expand_path('../active_admin/views/templates', __FILE__)
+      ActionController::Base.append_view_path ActiveAdmin.views_path
 
       # Don't eagerload our configs, we'll deal with them ourselves
       Rails.application.config.eager_load_paths = Rails.application.config.eager_load_paths.reject do |path| 
@@ -125,9 +128,13 @@ module ActiveAdmin
 
       yield self
 
+      generate_stylesheets
+    end
+
+    def generate_stylesheets
       # Setup SASS
       require 'sass/plugin' # This must be required after initialization
-      Sass::Plugin.add_template_location(File.expand_path("../active_admin/stylesheets/", __FILE__), File.join(Rails.root, "public/stylesheets/admin"))
+      Sass::Plugin.add_template_location(File.expand_path("../active_admin/stylesheets/", __FILE__), File.join(Sass::Plugin.options[:css_location], 'admin'))
     end
 
     # Registers a brand new configuration for the given resource.
@@ -178,9 +185,7 @@ module ActiveAdmin
       return false if loaded?
 
       # Load files
-      load_paths.flatten.compact.uniq.each do |path|
-        Dir["#{path}/*.rb"].each{|f| load f }
-      end
+      files_in_load_path.each{|file| load file }
 
       # If no configurations, let's make sure you can still login
       load_default_namespace if namespaces.values.empty?
@@ -189,6 +194,11 @@ module ActiveAdmin
       namespaces.values.each{|namespace| namespace.load_menu! }
 
       @@loaded = true
+    end
+
+    # Returns ALL the files to load from all the load paths
+    def files_in_load_path
+      load_paths.flatten.compact.uniq.collect{|path| Dir["#{path}/**/*.rb"] }.flatten
     end
 
     # Creates all the necessary routes for the ActiveAdmin configurations
