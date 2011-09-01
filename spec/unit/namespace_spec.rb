@@ -1,9 +1,15 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper') 
+require 'spec_helper' 
 
 describe ActiveAdmin::Namespace do
 
+  let(:application){ ActiveAdmin::Application.new }
+
   context "when new" do
-    let(:namespace){ ActiveAdmin::Namespace.new(:admin) }
+    let(:namespace){ ActiveAdmin::Namespace.new(application, :admin) }
+
+    it "should have an application instance" do
+      namespace.application.should == application
+    end
 
     it "should have a name" do
       namespace.name.should == :admin
@@ -20,7 +26,7 @@ describe ActiveAdmin::Namespace do
 
   describe "registering a resource" do
 
-    let(:namespace){ ActiveAdmin::Namespace.new(:admin) }
+    let(:namespace){ ActiveAdmin::Namespace.new(application, :admin) }
 
     context "with no configuration" do
       before do
@@ -53,11 +59,12 @@ describe ActiveAdmin::Namespace do
     end
 
     context "with a resource that's namespaced" do
+
       before do
         module ::Mock; class Resource; def self.has_many(arg1, arg2); end; end; end
         namespace.register Mock::Resource
       end
-      
+
       it "should store the namespaced registered configuration" do
         namespace.resources.keys.should include('MockResource')
       end
@@ -71,23 +78,33 @@ describe ActiveAdmin::Namespace do
       it "should use the resource as the model in the controller" do
         Admin::MockResourcesController.resource_class.should == Mock::Resource
       end
+
     end
 
     describe "finding resource instances" do
-      let(:namespace){ ActiveAdmin::Namespace.new(:admin) }
-      context "when registered" do
-        before do
-          @post_resource = namespace.register Post
-        end
-        it "should return the resource instance" do
-          namespace.resource_for(Post).should == @post_resource
-        end
+
+      let(:namespace){ ActiveAdmin::Namespace.new(application, :admin) }
+
+      it "should return the resource when its been registered" do
+        post = namespace.register Post
+        namespace.resource_for(Post).should == post
       end
-      context "when not registered" do
-        it "should be nil" do
-          namespace.resource_for(Post).should == nil
-        end
+
+      it 'should return nil when the resource has not been registered' do
+        namespace.resource_for(Post).should == nil
       end
+
+      it "should return the parent when the parent class has been registered and the child has not" do
+        user = namespace.register User
+        namespace.resource_for(Publisher).should == user
+      end
+
+      it "should return the resource if it and it's parent were registered" do
+        user = namespace.register User
+        publisher = namespace.register Publisher
+        namespace.resource_for(Publisher).should == publisher
+      end
+
     end
 
     describe "adding to the menu" do
@@ -118,8 +135,40 @@ describe ActiveAdmin::Namespace do
       end
 
       describe "disabling the menu" do
-        # TODO
-        it "should not create a menu item"
+        before do
+          namespace.register Category do
+            menu false
+          end
+          namespace.load_menu!
+        end
+        it "should not create a menu item" do
+          namespace.menu["Categories"].should be_nil
+        end
+      end
+      
+      describe "setting menu priority" do
+        before do
+          namespace.register Category do
+            menu :priority => 2
+          end
+          namespace.load_menu!
+        end
+        it "should have a custom priority of 2" do
+          namespace.menu["Categories"].priority.should == 2
+        end
+      end
+      
+      describe "setting a condition for displaying" do
+        before do
+          namespace.register Category do
+            menu :if => proc { false }
+          end
+          namespace.load_menu!
+        end
+        it "should have a proc returning false" do
+          namespace.menu["Categories"].display_if_block.should be_instance_of(Proc)
+          namespace.menu["Categories"].display_if_block.call.should == false
+        end
       end
 
       describe "adding as a belongs to" do
@@ -149,13 +198,13 @@ describe ActiveAdmin::Namespace do
     describe "dashboard controller name" do
       context "when namespaced" do
         it "should be namespaced" do
-          namespace = ActiveAdmin::Namespace.new(:admin)
+          namespace = ActiveAdmin::Namespace.new(application, :admin)
           namespace.dashboard_controller_name.should == "Admin::DashboardController"
         end
       end
       context "when not namespaced" do
         it "should not be namespaced" do
-          namespace = ActiveAdmin::Namespace.new(:root)
+          namespace = ActiveAdmin::Namespace.new(application, :root)
           namespace.dashboard_controller_name.should == "DashboardController"
         end
       end

@@ -4,14 +4,15 @@ module ActiveAdmin
       class New < Base
 
         def title
-          "New #{active_admin_config.resource_name}"
+          I18n.t('active_admin.new_model', :model => active_admin_config.resource_name)
         end
 
         def main_content
           config = self.form_config.dup
           config.delete(:block)
           config.reverse_merge!({
-            :url => collection_path
+            :url => collection_path,
+            :as => active_admin_config.underscored_resource_name
           })
 
           if form_config[:partial]

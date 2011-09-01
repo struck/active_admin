@@ -1,8 +1,8 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper') 
+require 'spec_helper' 
 
 describe ActiveAdmin::FormBuilder do
-  include Arbre::HTML
-  let(:assigns){ {} }
+
+  setup_arbre_context!
 
   # Setup an ActionView::Base object which can be used for
   # generating the form for.
@@ -28,6 +28,7 @@ describe ActiveAdmin::FormBuilder do
   end
 
   def build_form(options = {}, &block)
+    options.merge!({:url => posts_path})
     active_admin_form_for Post.new, options, &block
   end
 
@@ -60,6 +61,23 @@ describe ActiveAdmin::FormBuilder do
                                                           :value => "Submit Me" })
       body.should have_tag("input", :attributes => {  :type => "submit",
                                                           :value => "Another Button" })
+    end
+  end
+
+  context "when polymorphic relationship" do
+    
+    let(:body) do
+      comment = ActiveAdmin::Comment.new
+      
+      active_admin_form_for comment, :url => "admins/comments" do |f|
+        f.inputs :resource
+      end
+      
+    end
+    
+    it "should not generate any field" do
+      body.should have_tag("form", :attributes => { :method => 'post' })
+      body.should_not have_tag("select")
     end
   end
 

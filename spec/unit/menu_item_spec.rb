@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper') 
+require 'spec_helper' 
 
 module ActiveAdmin
   describe MenuItem do
@@ -26,6 +26,12 @@ module ActiveAdmin
       block = lambda{ logged_in? }
       item = MenuItem.new("Dashboard", "/admin", 10, :if => block )
       item.display_if_block.should == block
+    end
+    
+    it "should have a default display if block always returning true" do
+      item = MenuItem.new("Dashboard", "/admin")
+      item.display_if_block.should be_instance_of(Proc)
+      item.display_if_block.call(self).should == true
     end
 
     describe "url generation and caching" do

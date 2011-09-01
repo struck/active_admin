@@ -1,5 +1,5 @@
 module ActiveAdmin
-  class ResourceController < ::InheritedViews::Base
+  class ResourceController < ::InheritedResources::Base
 
     # This module deals with the retrieval of collections for resources
     # within the resource controller.
@@ -28,7 +28,7 @@ module ActiveAdmin
         # This method should return an ActiveRecord::Relation object so that
         # the searching and filtering can be applied on top
         #
-        # Note, unless you are doing something special, you should use the 
+        # Note, unless you are doing something special, you should use the
         # scope_to method from the Scoping module instead of overriding this
         # method.
         def scoped_collection
@@ -46,8 +46,9 @@ module ActiveAdmin
 
         def sort_order(chain)
           params[:order] ||= active_admin_config.sort_order
+          table_name = active_admin_config.resource_table_name
           if params[:order] && params[:order] =~ /^([\w\_\.]+)_(desc|asc)$/
-            chain.order("#{$1} #{$2}")
+            chain.order("#{table_name}.#{$1} #{$2}")
           else
             chain # just return the chain
           end
@@ -82,25 +83,19 @@ module ActiveAdmin
         protected
 
         def active_admin_collection
-          scope_collection(super)
+          scope_current_collection(super)
         end
 
-        def scope_collection(chain)
+        def scope_current_collection(chain)
           if current_scope
             @before_scope_collection = chain
-
-            # ActiveRecord::Base isn't a relation, so let's help you out
-            return chain if current_scope.scope_method == :all
-
-            if current_scope.scope_method
-              chain.send(current_scope.scope_method)
-            else
-              instance_exec chain, &current_scope.scope_block
-            end
+            scope_chain(current_scope, chain)
           else
             chain
           end
         end
+
+        include ActiveAdmin::ScopeChain
 
         def current_scope
           @current_scope ||= if params[:scope]
@@ -125,7 +120,7 @@ module ActiveAdmin
         end
 
         def paginate(chain)
-          chain.paginate(:page => params[:page], :per_page => @per_page || ActiveAdmin.default_per_page)
+          chain.page(params[:page]).per(@per_page || active_admin_application.default_per_page)
         end
       end
 
@@ -140,3 +135,4 @@ module ActiveAdmin
     end
   end
 end
+

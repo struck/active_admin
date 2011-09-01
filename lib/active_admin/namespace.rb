@@ -28,9 +28,10 @@ module ActiveAdmin
 
     RegisterEvent = 'active_admin.namespace.register'.freeze
 
-    attr_reader :resources, :name, :menu
+    attr_reader :application, :resources, :name, :menu
 
-    def initialize(name)
+    def initialize(application, name)
+      @application = application
       @name = name.to_s.underscore.to_sym
       @resources = {}
       @menu = Menu.new
@@ -98,7 +99,15 @@ module ActiveAdmin
 
     # Returns the first registered ActiveAdmin::Resource instance for a given class
     def resource_for(klass)
-      resources.values.find{|config| config.resource == klass }
+      actual = resources.values.find{|config| config.resource == klass }
+      return actual if actual
+
+      if klass.respond_to?(:base_class)
+        base_class = klass.base_class
+        resources.values.find{|config| config.resource == base_class }
+      else
+        nil
+      end
     end
 
     protected
@@ -170,7 +179,7 @@ module ActiveAdmin
     # Adds the dashboard to the menu
     def register_dashboard
       dashboard_path = root? ? :dashboard_path : "#{name}_dashboard_path".to_sym
-      menu.add("Dashboard", dashboard_path, 1) unless menu["Dashboard"]
+      menu.add(I18n.t("active_admin.dashboard"), dashboard_path, 1) unless menu[I18n.t("active_admin.dashboard")]
     end
 
     # Does all the work of registernig a config with the menu system
@@ -190,7 +199,7 @@ module ActiveAdmin
         # Update the url if it's already been created
         add_to[config.menu_item_name].url = config.route_collection_path
       else
-        add_to.add(config.menu_item_name, config.route_collection_path)
+        add_to.add(config.menu_item_name, config.route_collection_path, config.menu_item_priority, { :if => config.menu_item_display_if })
       end
     end
   end

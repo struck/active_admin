@@ -10,7 +10,7 @@ module RSpec
       include ActionDispatch::Integration::Runner
       include RSpec::Rails::TestUnitAssertionAdapter
       include ActionDispatch::Assertions
-      include Capybara
+      include Capybara::DSL
       include RSpec::Matchers
 
       module InstanceMethods
@@ -27,10 +27,6 @@ module RSpec
         before do
           @router = ::Rails.application.routes
         end
-      end
-
-      RSpec.configure do |c|
-        c.include self, :example_group => { :file_path => /\bspec\/integration\// }
       end
     end
   end

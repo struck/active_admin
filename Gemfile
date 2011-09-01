@@ -1,28 +1,39 @@
-# These resources are needed to setup the test env
 source 'http://rubygems.org'
 
-gem 'rails', '3.1.0.beta1'
+gemspec
 
-gem "meta_search",    '>= 0.9.2'
-gem 'devise',         '>= 1.1.2'
-# gem 'formtastic',     '>= 1.1.0'
-gem 'formtastic', :git => 'git://github.com/struckaxiom/formtastic.git'
-gem 'will_paginate',  '>= 3.0.pre2'
-gem 'inherited_views'
-gem 'haml',           '>= 3.0.18'
+require File.expand_path('../spec/support/detect_rails_version', __FILE__)
+
+rails_version = ENV['RAILS'] || detect_rails_version || "3.1.0.rc10"
+gem 'rails',          rails_version
+
+case rails_version
+when /^3\.0/
+  gem "meta_search",    '~> 1.0.0'
+when /^3\.1/
+  gem "meta_search",    '>= 1.1.0.pre'
+  gem 'sass-rails',     "~> 3.1.0.rc"
+else
+  raise "Rails #{rails_version} is not supported yet"
+end
 
 group :development, :test do
   gem 'sqlite3-ruby',   :require => 'sqlite3'
-  gem 'jeweler',        '1.5.2'
+  gem 'rake',           '0.8.7', :require => false
+  gem 'haml',           '~> 3.1.1', :require => false
+  gem 'yard'
+  gem 'rdiscount' # For yard
 end
 
 group :test do
-  gem 'rspec',          '2.0.0.beta.22'
-  gem 'rspec-rails',    '2.0.0.beta.22'
-  gem 'capybara',       '0.3.9'
-  gem 'cucumber',       '0.9.2'
-  gem 'cucumber-rails', '0.3.2'
+  gem 'rspec',          '~> 2.6.0'
+  gem 'rspec-rails',    '~> 2.6.0'
+  gem 'capybara',       '1.0.0'
+  gem 'cucumber',       '0.10.6'
+  gem 'cucumber-rails', '0.5.2'
   gem 'database_cleaner'
   gem 'shoulda',        '2.11.2',           :require => nil
   gem 'launchy'
+  gem 'jslint_on_rails',    '~> 1.0.6'
+  gem 'guard-rspec'
 end

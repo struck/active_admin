@@ -1,10 +1,11 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper') 
+require 'spec_helper' 
 
 module ActiveAdmin
   class Resource
     describe BelongsTo do
 
-      let(:namespace){ Namespace.new(:admin) }
+      let(:application){ ActiveAdmin::Application.new }
+      let(:namespace){ Namespace.new(application, :admin) }
       let(:post){ namespace.register(Post) }
       let(:belongs_to){ BelongsTo.new(post, :user) }
 

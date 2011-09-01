@@ -5,6 +5,7 @@ module ActiveAdmin
     Dir[File.expand_path('../view_helpers', __FILE__) + "/*.rb"].each{|f| require f }
 
     include AssignsWithIndifferentAccessHelper
+    include ActiveAdminApplicationHelper
     include RendererHelper
     include AutoLinkHelper
     include BreadcrumbHelper
@@ -12,9 +13,7 @@ module ActiveAdmin
     include IconHelper
     include MethodOrProcHelper
     include SidebarHelper
-    include TableHelper
     include FormHelper
-    include StatusTagHelper
     include FilterFormHelper
     include TitleHelper
     include ViewFactoryHelper

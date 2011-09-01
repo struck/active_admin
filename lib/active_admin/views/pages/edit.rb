@@ -4,14 +4,15 @@ module ActiveAdmin
       class Edit < Base
 
         def title
-          "Edit #{active_admin_config.resource_name}"
+          I18n.t('active_admin.edit_model', :model => active_admin_config.resource_name)
         end
 
         def main_content
           config = self.form_config.dup
           config.delete(:block)
           config.reverse_merge!({
-            :url => resource_path(resource)
+            :url => resource_path(resource),
+            :as => active_admin_config.underscored_resource_name
           })
 
           if form_config[:partial]

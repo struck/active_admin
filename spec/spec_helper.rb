@@ -3,17 +3,14 @@ $LOAD_PATH << File.expand_path('../support', __FILE__)
 
 ENV['BUNDLE_GEMFILE'] = File.expand_path('../../Gemfile', __FILE__)
 
-require 'rubygems'
+require 'detect_rails_version'
+ENV['RAILS'] = detect_rails_version
+
 require "bundler"
 Bundler.setup
 
 require 'shoulda/active_record'
 include Shoulda::ActiveRecord::Macros
-
-# Setup autoloading of ActiveAdmin and the load path
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-autoload :ActiveAdmin, 'active_admin'
-
 
 module ActiveAdminIntegrationSpecHelper
   extend self
@@ -28,7 +25,7 @@ module ActiveAdminIntegrationSpecHelper
   end
 
   def reload_menus!
-    ActiveAdmin.namespaces.values.each{|n| n.load_menu! }
+    ActiveAdmin.application.namespaces.values.each{|n| n.load_menu! }
   end
 
   # Sometimes we need to reload the routes within
@@ -59,15 +56,24 @@ module ActiveAdminIntegrationSpecHelper
     describe *args do
       include RSpec::Rails::ControllerExampleGroup
       render_views  
-      metadata[:behaviour][:describes] = ActiveAdmin.namespaces[:admin].resources['Post'].controller
+      # metadata[:behaviour][:describes] = ActiveAdmin.namespaces[:admin].resources['Post'].controller
       module_eval &block
+    end
+  end
+
+  # Sets up an Arbre::Builder context
+  def setup_arbre_context!
+    include Arbre::Builder
+    let(:assigns){ {} }
+    let(:helpers){ mock_action_view }
+    before do
+      @_helpers = helpers
     end
   end
 
   # Setup a describe block which uses capybara and rails integration
   # test methods.
   def describe_with_capybara(*args, &block)
-    require 'integration_example_group'
     describe *args do
       include RSpec::Rails::IntegrationExampleGroup
       module_eval &block
@@ -86,15 +92,18 @@ module ActiveAdminIntegrationSpecHelper
 
 end
 
-ENV['RAILS'] ||= '3.0.0'
 ENV['RAILS_ENV'] = 'test'
-
 ENV['RAILS_ROOT'] = File.expand_path("../rails/rails-#{ENV["RAILS"]}", __FILE__)
 
 # Create the test app if it doesn't exists
 unless File.exists?(ENV['RAILS_ROOT'])
   system 'rake setup'
 end
+
+# Ensure the Active Admin load path is happy
+require 'rails'
+require 'active_admin'
+ActiveAdmin.application.load_paths = [ENV['RAILS_ROOT'] + "/app/admin"]
 
 require ENV['RAILS_ROOT'] + '/config/environment'
 require 'rspec/rails'
@@ -106,22 +115,29 @@ reload_routes!
 
 # Disabling authentication in specs so that we don't have to worry about
 # it allover the place
-ActiveAdmin.authentication_method = false
-ActiveAdmin.current_user_method = false
+ActiveAdmin.application.authentication_method = false
+ActiveAdmin.application.current_user_method = false
 
 # Don't add asset cache timestamps. Makes it easy to integration
 # test for the presence of an asset file
 ENV["RAILS_ASSET_ID"] = ''
 
-Rspec.configure do |config|
+RSpec.configure do |config|
   config.use_transactional_fixtures = true
   config.use_instantiated_fixtures = false
+end
+
+# All RSpec configuration needs to happen before any examples
+# or else it whines.
+require 'integration_example_group'
+RSpec.configure do |c|
+  c.include RSpec::Rails::IntegrationExampleGroup, :example_group => { :file_path => /\bspec\/integration\// }
 end
 
 # Ensure this is defined for Ruby 1.8
 module MiniTest; class Assertion < Exception; end; end
 
-Rspec::Matchers.define :have_tag do |*args|
+RSpec::Matchers.define :have_tag do |*args|
 
   match_unless_raises Test::Unit::AssertionFailedError do |response|
     tag = args.shift

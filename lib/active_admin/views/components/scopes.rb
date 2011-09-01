@@ -16,10 +16,16 @@ module ActiveAdmin
 
       def build_scope(scope)
         span :class => classes_for_scope(scope) do
-          if current_scope?(scope) 
-            em(scope.name)
+          begin
+            scope_name = I18n.t!("active_admin.scopes.#{scope.scope_method}")
+          rescue I18n::MissingTranslationData
+            scope_name = scope.name
+          end
+
+          if current_scope?(scope)
+            em(scope_name)
           else
-            a(scope.name, :href => url_for(params.merge(:scope => scope.id, :page => 1)))
+            a(scope_name, :href => url_for(params.merge(:scope => scope.id, :page => 1)))
           end
           text_node(" ")
           scope_count(scope)
@@ -47,12 +53,11 @@ module ActiveAdmin
         end
       end
 
+      include ActiveAdmin::ScopeChain
+
+      # Return the count for the scope passed in.
       def get_scope_count(scope)
-        if scope.scope_method
-          scoping_class.send(scope.scope_method).count
-        else
-          instance_exec(scoping_class, &scope.scope_block).count
-        end
+        scope_chain(scope, scoping_class).count
       end
 
       def scoping_class

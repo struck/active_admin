@@ -5,20 +5,28 @@ module ActiveAdmin
 
         def build(*args)
           super
+          add_classes_to_body
           build_active_admin_head
           build_page
         end
 
         private
 
+
+        def add_classes_to_body
+          @body.add_class(params[:action])
+          @body.add_class(params[:controller].gsub('/', '_'))
+          @body.add_class("logged_in")
+        end
+
         def build_active_admin_head
           within @head do
             meta :"http-equiv" => "Content-type", :content => "text/html; charset=utf-8"
-            insert_tag Arbre::HTML::Title, [title, ActiveAdmin.site_title].join(" | ")
-            ActiveAdmin.stylesheets.each do |path|
+            insert_tag Arbre::HTML::Title, [title, active_admin_application.site_title].join(" | ")
+            active_admin_application.stylesheets.each do |path|
               link :href => stylesheet_path(path), :media => "screen", :rel => "stylesheet", :type => "text/css"
             end
-            ActiveAdmin.javascripts.each do |path|
+            active_admin_application.javascripts.each do |path|
               script :src => javascript_path(path), :type => "text/javascript"
             end
             text_node csrf_meta_tag
@@ -66,15 +74,17 @@ module ActiveAdmin
         end
 
         def build_action_items
-          items = controller.class.action_items_for(params[:action])
-          insert_tag view_factory.action_items, items
+          if active_admin_config
+            items = active_admin_config.action_items_for(params[:action])
+            insert_tag view_factory.action_items, items
+          end
         end
 
         def build_page_content
-          div :id => "content", :class => (skip_sidebar? ? "without_sidebar" : "with_sidebar") do
-            build_flash_messages
+          build_flash_messages
+          div :id => "active_admin_content", :class => (skip_sidebar? ? "without_sidebar" : "with_sidebar") do
             build_main_content_wrapper
-            build_sidebar
+            build_sidebar unless skip_sidebar?
           end
         end
 
@@ -97,7 +107,7 @@ module ActiveAdmin
         end
 
         def main_content
-          "Please implement #{self.class.name}#main_content to display content.".html_safe
+          I18n.t('active_admin.main_content', :model => self.class.name).html_safe
         end
 
         def title
@@ -112,7 +122,11 @@ module ActiveAdmin
 
         # Returns the sidebar sections to render for the current action
         def sidebar_sections_for_action
-          controller.class.sidebar_sections_for(params[:action])
+          if active_admin_config
+            active_admin_config.sidebar_sections_for(params[:action])
+          else
+            []
+          end
         end
 
         # Renders the sidebar
@@ -122,6 +136,10 @@ module ActiveAdmin
               sidebar_section(section)
             end
           end
+        end
+
+        def skip_sidebar?
+          sidebar_sections_for_action.empty? || assigns[:skip_sidebar] == true
         end
 
         # Renders the content for the footer
