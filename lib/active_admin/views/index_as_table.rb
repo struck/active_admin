@@ -125,6 +125,37 @@ module ActiveAdmin
         # To include or exclude specific actions, use the :only and :except options.
         # Insert additional markup before or after the default actions by using the :before and :after optinos. If the 
         # :before or :after options is a Proc, it will be called, with the current resource applied as first argument.
+        # 
+        #   index do
+        #     id_column
+        #     column :title
+        #     default_actions
+        #   end
+        # 
+        #   # the :except argument allows for blacklisting of links
+        #   index do
+        #     id_column
+        #     column :title
+        #     default_actions :except => [:edit, :delete] # renders only View link
+        #   end
+        # 
+        #   # the :only argument allows for whitelisting of links
+        #   index do
+        #     id_column
+        #     column :title
+        #     default_actions :only => [:edit] # renders only Edit link
+        #   end
+        # 
+        #   # A use case likely never used, but illustrating the priority of :except over :only :
+        #   index do
+        #     id_column
+        #     column :title
+        #     default_actions :only => [:edit, :delete], :except => [:delete] # renders only Edit link
+        #   end
+        # 
+        #   Link symbols: 
+        #   :edit, :view, :delete
+        # 
         def default_actions(options = {})
           options = {
             :name => "",
